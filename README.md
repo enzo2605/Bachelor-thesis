@@ -1,4 +1,4 @@
-# NUMERICAL SIMULATION OF A VEGETATION MODEL ON GPU
+# Numerical simulation of a vegetation model on GPU
 
 ![projectLogo](Frontespizio_tesi.jpg)
 
