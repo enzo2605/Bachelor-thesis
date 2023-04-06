@@ -1,0 +1,463 @@
+\thispagestyle{headings}
+\chapter{Un problema di vegetazione} \label{cap:modello-numerico}
+
+\noindent Nel seguente capitolo verrà trattato un procedimento di discretizzazione che consente di passare dal modello matematico, che rappresenta il problema di vegetazione in esame, alla formulazione di un algoritmo per l'ambiente sequenziale e alla sua implementazione in ambiente CPU standard.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%              Il modello matematico
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Il modello matematico} \label{sec:math-model}
+\noindent Consideriamo il seguente sistema di PDE:
+
+\begin{equation}
+    \begin{cases}
+        \displaystyle
+        \frac{\partial u_1}{\partial t} = \frac{\partial^2 u_1}{\partial x^2} + wu_1(u_1 + Hu_2) - B_1u_1 - Su_1u_2, \\\\
+        \displaystyle
+        \frac{\partial u_2}{\partial t} = D\frac{\partial^2 u_2}{\partial x^2} + Fwu_2(u_1 + Hu_2) - B_2u_2, \\\\
+        \displaystyle
+        \frac{\partial w}{\partial t} = d\frac{\partial^2 w}{\partial x^2} + A - w - w(u_1 + u_2)(u_1 + Hu_2). \\
+    \end{cases}
+    \label{eq:main-equation}
+\end{equation}
+
+\noindent Ove $(x, t) \in [x_0, X] \times [t_0, T]$, con le seguenti condizioni iniziali:
+\begin{equation}
+    \begin{cases}
+        u_1(x, t_0) = U_{1, 0}(x),\\
+        u_2(x, t_0) = U_{2, 0}(x),\\
+        w(x, t_0) = W_0(x).
+    \end{cases}
+    \label{eq:main-equation-intial-condition}
+\end{equation}
+
+\noindent Esso rappresenta un modello di vegetazione in zone climatiche semi-aride ed è stato introdotto per studiare come due specie erbacee competono per la stessa risorsa limitata (l'acqua) riuscendo a sopravvivere. Per capire meglio come funziona il modello, si può immaginare che la funzione $u_1$ descriva la densità dell'erba presente sul suolo $x$ all'istante $t$, che la funzione $u_2$ rappresenti la stessa cosa ma per gli alberi, e che $w$ sia la quantità di acqua disponibile. La coesistenza delle due specie erbacee è uno stato metastabile, ovvero si presenta come soluzione stabile del sistema per tempi molto lunghi. Tuttavia, per $t \to \infty$ una delle due piante muore.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%              Discretizzazione spaziale
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discretizzazione spaziale} \label{sec:space-semi-discretization}
+\noindent Consideriamo l'equazione \eqref{eq:main-equation}. Il primo passo consiste nell'approssimare numericamente le derivate parziali rispetto allo spazio utilizzando il \textbf{MOL (Method Of Lines)}, che usando il metodo delle differenze finite centrali del secondo ordine (\textit{\textbf{central finite differences}}) permette di dividere l'intervallo spaziale $[x_0, X]$ in $M - 1$ sottointervalli:
+
+\vspace{.5cm}
+
+\begin{align*}
+    \displaystyle
+    \frac{\partial^2 u}{\partial x^2} = \frac{u(x + \Delta x,t) - 2u(x,t) + u(x - \Delta x,t)}{\Delta x^2}, \quad u = u_1, u_2, w, \quad \Delta x = \frac{X - x_0}{M - 1}
+\end{align*}
+
+\vspace{.5cm}
+
+\noindent Dunque si passa da un sistema di PDE, costituito da derivate parziali e avente come variabili indipendenti il tempo e lo spazio ad un sistema di ODE, costituito da derivate ordinarie:
+
+\begin{equation}
+    \begin{cases}
+        \displaystyle
+        \frac{\partial U_1}{\partial t} = \frac{1}{\Delta x^2} L_{Diff}U_1 + F_1 \\\\
+        \displaystyle
+        \frac{\partial U_2}{\partial t} = \frac{D}{\Delta x^2} L_{Diff}U_2 + F_2 \\\\
+        \displaystyle
+        \frac{\partial W}{\partial t} = \frac{d}{\Delta x^2} L_{Diff}W + F_3 \\
+    \end{cases}
+    \label{eq:ODE-system}
+\end{equation}
+
+\noindent Per semplicità di notazione, è stata omessa la dipendenza dal tempo di tutte le funzioni coinvolte. La notazione usata è la seguente:
+
+\begin{equation}
+    \displaystyle
+    x_m = x_0 + m \Delta x; \quad m = 0,\ldots, M - 1; \quad x_{M - 1} = X
+    \label{eq:notations}
+\end{equation}
+
+\noindent e:
+
+\begin{align*}
+    u_1^m = u_1(x_m, t), \quad u_2^m = u_2(x_m, t), \quad w^m = w(x_m, t)
+\end{align*} % end align
+\begin{align*}
+    U_1 = (u_1^m(t))^{M - 1}_{m = 0}, \quad U_2 = (u_2^m(t))^{M - 1}_{m = 0}, \quad W = (w^m(t))^{M - 1}_{m = 0}
+\end{align*} % end align
+
+\noindent con $U_1, U_2, W \in \mathbb{R}^{M}$.
+
+\begin{align*}
+    \frac{\partial U_1}{\partial t} = \Big( \frac{\partial u_1^m}{\partial t} \Big)_{m = 0}^{M - 1}, \quad \frac{\partial U_2}{\partial t} = \Big( \frac{\partial u_2^m}{\partial t} \Big)_{m = 0}^{M - 1}, \quad \frac{\partial W}{\partial t} = \Big( \frac{\partial w^m}{\partial t} \Big)_{m = 0}^{M - 1}
+\end{align*} % end align
+\begin{gather*}
+    F_1 = (w^mu_1^m(u_1^m+Hu_2^m)-B_1u_1^m-Su_1^mu_2^m)^{M - 1}_{m = 0} \\
+    F_2 = (Fw^mu_2^m(u_1^m+Hu_2^m)-B_2u_2^m)^{M - 1}_{m = 0} \\
+    F_3 = (A - w^m - w^m(u_1^m+u_2^m)(u_1^m+Hu_2^m))^{M - 1}_{m = 0}
+\end{gather*} % end gather
+
+\noindent Al fine di completare la procedura di discretizzazione spaziale, se si assume che $u_1, u_2, w$ siano nulli al di fuori del loro dominio, risulta che la matrice $L_{Diff}$ è tridiagonale ed è data da:
+
+\begin{equation}
+    L_{Diff} = 
+\begin{pmatrix}
+    -2 & 1 & & & \\
+    1 & -2 & 1 & \\
+    & \ddots & \ddots & \ddots & & \\
+    & & 1 & -2 & 1 \\
+    & & & 1 & -2
+ \end{pmatrix}
+ \in \mathbb{R} ^ {M, M} \label{eq:matrix-Ldiff}
+\end{equation}
+
+\noindent Utilizzando condizioni al contorno periodiche, la matrice $L_{Diff}$ deve essere leggermente modificata, ponendo $L_{Diff}(1, M) = L_{Diff}(M, 1) = 1$. \\
+
+\noindent Infine, compattando ulteriormente il sistema di ODE discrete \eqref{eq:ODE-system}, si ottiene:
+
+\begin{equation}
+    y'(t) = L \cdot y(t) + N L(y(t)) \label{eq:ODE-system-disc}
+\end{equation}
+
+\noindent dove:
+
+\begin{equation}
+    y(t) = [U_1, U_2, W]^T \in \mathbb{R} ^{3M} \ \text{ e } \ NL(y(t)) = [F_1, F_2, F_3]^T
+    \label{eq:yt-system}
+\end{equation}
+
+\noindent mentre la matrice $L$ assume la forma:
+
+\begin{equation}
+    L = \frac{1}{\Delta x^2} 
+\begin{pmatrix}
+    L_{Diff} & 0 & 0 \\
+    0 & DL_{Diff} & 0 \\
+    0 & 0 & dL_{Diff}
+ \end{pmatrix}
+ \in \mathbb{R} ^ {3M, 3M} \label{eq:matrix-L}.
+\end{equation}
+
+\noindent Il passo successivo mira a discretizzare il sistema di ODE \eqref{eq:ODE-system-disc} mediante peer methods.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     Discretizzazione rispetto al tempo con peer methods
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discretizzazione rispetto al tempo con peer methods} \label{sec:time-discretization}
+\noindent L'equazione (\ref{eq:ODE-system-disc}) rappresenta un sistema di ODE in forma vettoriale. Per discretizzare rispetto al tempo il sistema di ODE si può fare affidamento su due tipi principali di metodi: \textbf{espliciti} e \textbf{impliciti}. Nei metodi espliciti, la soluzione al passo temporale successivo viene stimata direttamente dai valori della soluzione al passo temporale corrente. Nei metodi impliciti, la soluzione al passo temporale successivo viene stimata risolvendo un'equazione non lineare che coinvolge sia il passo temporale corrente che quello successivo.
+La scelta del metodo di discretizzazione temporale \textbf{dipende dal problema specifico da risolvere}, nonché dal compromesso desiderato tra accuratezza ed efficienza computazionale. \noindent Per risolvere il sistema di ODE sarebbe preferibile utilizzare un metodo che non sia troppo costoso, cioè che coinvolga il minor numero possibile di valutazioni di funzioni e inversioni di matrici. Dunque, bisogna scegliere un metodo che sia numericamente stabile e non sia pesante computazionalmente. \noindent Di solito si fa uso di metodi impliciti come quello di \textit{\textbf{Runge-Kutta}} \cite{implicit-runge-kutta, implicit-runge-kutta-2}, Rosenbrock o IMEX.
+\noindent Tuttavia i metodi implici richiedono ad ogni passo di integrazione e per ogni stage di calcolare un sistema di equazioni lineari o non lineari, che richiedono di eseguire numericamente delle inversioni di matrici la cui dimensione è proporzionale alla dimensione del problema. Dunque, i metodi impliciti sono sì costosi ma sono gli unici che soddisfano i requisiti di stabilità richiesti dal problema. D'altro canto, i metodi espliciti non comportano la risoluzione di sistemi di equazioni, ma richiedono di usare un intervallo temporale molto piccolo e per questo motivo tali metodi impiegano un tempo considerevolmente elevato per convergere.
+Un buon compromesso tra accuratezza ed efficienza computazionale è rappresentato da una classe di metodi espliciti denominata \textbf{peer methods} [\cite{peer-methods-1}-\cite{peer-methods-10}].
+I peer methods sono una classe di metodi numerici basati su più passi (stage) che risolvono sistemi di ODE del primo ordine, nella forma generale di Cauchy $y(t) = f(t,y(t)) (t \in [t_0,T])$ con condizione iniziale $y_0 = y(t_0) \in \mathbb{R}^d$. Si consideri la discretizzazione temporale:
+
+\begin{equation}
+    t_n = t_0 + nh; \quad n = 0, \ldots, N; \quad t_N = T 
+\end{equation}
+
+\noindent dell'intervallo di integrazione $[t_0,T]$ relativo alla \eqref{eq:main-equation}, e quindi alla \eqref{eq:ODE-system-disc}. I peer methods basati su stage, espliciti, con $s$-stage e con dimensione del passo fissa $h$, hanno la seguente forma:
+
+\begin{equation}
+    Y_{n, i} = \sum_{j = 1}^s b_{ij}Y_{n - 1, j} + h\sum_{j = 1}^s a_{ij} f(t_{n - 1, j}, Y_{n - 1, j}), \quad n = 0,\ldots, N - 1
+    \label{eq:peer-methods-1}
+\end{equation}
+\begin{gather*}
+    Y_{n, i} \approx y(t_{n, i}), \qquad t_{n, i} = t_n + hc_i \qquad i = 1, \ldots, s.
+\end{gather*}
+
+\noindent dove $c_i$ sono i nodi in $[0, 1]$. Quindi, la soluzione progressiva $Y_{n,s}$ è l'approssimazione numerica di $y(t_n +h)$, cioè l'ultima fase calcola la soluzione numerica nei punti della griglia. I coefficienti nelle matrici $A = (a_{ij})^s _{i,j=1}$ e $B = (b_{ij})^s_{i,j=1}$ caratterizzano il peer methods utilizzato. Per scegliere i coefficienti delle matrici dobbiamo richiamare qualche risultato teorico. Per prima cosa, i peer methods si dicono ottimisticamente zero stabili imponendo:
+
+\begin{equation*}
+    (b_{ij})^{s-1}_{i,j=1} = 0, \qquad \text{ e } \qquad b_{is} = 1, \forall i = 1, \ldots, s.
+\end{equation*}
+
+\noindent Questa scelta è legata alla stabilità dei peer methods vicino all'origine \cite{two-step-peer-methods}. Inoltre, i coefficienti della matrice $A$ vengono assegnati imponendo l'ordine di consistenza dei peer methods \cite{two-step-peer-methods}, ovvero annullando un numero necessario di residui, definiti come:
+
+\begin{equation*}
+    h\Delta_i := y(t_{n,i}) - \sum_{j = 1}^{s}b_{ij}y(t_{n-1,j}) - h\sum_{j = 1}^{s}a_{ij}y'(t_{n-1,j}), \qquad i = 1,\ldots,s.
+\end{equation*}
+
+\noindent dove $y$ si estende su opportune basi polinomiali. Si noti che l'$i$-esimo residuo misura l'errore tra l'$i$-esimo stage e il suo valore esatto. Quindi, assumendo peer methods a $s$-stage di ordine $p = s$, i coefficienti $(a_{ij})^s_{i,j=1}$ devono soddisfare la relazione \cite{two-step-peer-methods}:
+
+\begin{equation*}
+    A = (CV_0D^{-1})V_1^{-1}-B(C-I_s)V_1D^{-1}V_1^{-1}
+\end{equation*}
+
+\noindent dove $V_0 = (c_i^{j - 1})^s_{i,j=1},  V_1 = ((c_i-1)^{j - 1})^{s}_{i,j=1}, C=diag(c_i), D = diag(1, \ldots, s)$ e $I_s$ è la matrice identità di dimensione $s$. In particolare, nello schema proposto, si sceglie di utilizzare i valori per $s = 2$ per quanto riguarda il numero di stage. Con queste condizioni, otteniamo:
+
+\begin{equation}
+    A = 
+    \begin{pmatrix}
+        0 & 0 \\
+        -1/2 & 3/2
+    \end{pmatrix},
+    \quad
+    B = 
+    \begin{pmatrix}
+        0 & 1 \\
+        0 & 1
+    \end{pmatrix},
+    \quad
+    (c_1, c_2) = (0, 1)
+    \label{eq:ABc-equation}
+\end{equation}
+
+\noindent per $s = 2$.
+
+\noindent Indicando con $\mathcal{F}$ le valutazioni delle funzioni degli stage in ogni punto discreto $t_{n,i}$, cioè,
+
+\begin{gather*}
+    \mathcal{F}(Y^{[n]})=(f(t_{n,1}, Y_{n,1})) \\
+    \mathcal{F}(Y^{[n]})=(f(t_{n,2}, Y_{n,2})) 
+\end{gather*}
+
+\noindent è possibile rappresentare i peer methods \eqref{eq:peer-methods-1} in forma vettoriale:
+
+\begin{equation}
+    Y^{[n]} = (B \otimes I_d)Y^{[n - 1]} + h(A \otimes I_d) \mathcal{F}(Y^{[n - 1]})
+    \label{eq:vector-representation-peer-methods}
+\end{equation}
+
+\noindent dove $d$ la dimensione della soluzione e $I_d$ è la matrice identità di ordine $d$. Infine, possiamo derivare l'intera procedura numerica ponendo nella formula \eqref{eq:vector-representation-peer-methods} $d = 3M$ e:
+
+\begin{gather}
+    \mathcal{F}(Y^{[n - 1]}) = (LY_{n - 1,1}+NL(Y_{n - 1,1})) \nonumber \\
+    \mathcal{F}(Y^{[n - 1]}) = (LY_{n - 1,2}+NL(Y_{n - 1,2}))
+    \label{eq:FYnm1-equation}
+\end{gather}
+
+\noindent dove $L$ e $NL$ sono come in \eqref{eq:yt-system} e \eqref{eq:matrix-L}, e applicando lo schema al problema di vegetazione nella forma ODE \eqref{eq:ODE-system-disc}. \\
+\noindent Per capire meglio come i peer methods possono essere implementati prima in sequenziale e poi in parallelo, li si può riscrivere in maniera più estesa come segue:
+
+\NewEnviron{NORMAL}{% 
+    \scalebox{2}{$\BODY$} 
+} 
+ 
+\NewEnviron{HUGE}{% 
+    \scalebox{5}{$\BODY$} 
+}
+
+\begin{gather}
+    Y_{n,1} = b_{11}Y_{n-1, 1} + \ldots + b_{1s}Y_{n-1, s} + ha_{11}f(t_{n-1, 1}, Y_{n-1,1}) +  \ldots + ha_{1s}f(t_{n-1, s}, Y_{n-1,s}),\nonumber\\
+    Y_{n,2} = b_{21}Y_{n-1, 1} + \ldots + b_{2s}Y_{n-1, s} + ha_{21}f(t_{n-1, 1}, Y_{n-1,1}) +  \ldots + ha_{2s}f(t_{n-1, s}, Y_{n-1,s}). \nonumber\\
+    \label{eq:extended-peer-methods}
+\end{gather}
+
+\noindent Da questa scrittura risulta evidente che tutti gli stage nell'intervallo $[t_n, t_n + h]$ sono funzione di tutti gli stage nell'intervallo $[t_{n} - h, t_{n}]$. Quindi la soluzione progressiva $y(t_n + h) \approx Y_{n,s}$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                   Algoritmo sequenziale
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algoritmo sequenziale} \label{sec:approccio-sequenziale}
+\noindent Le discussioni precedenti ci consentono di introdurre un algoritmo che richiama i principali passaggi numerici sopra descritti.
+L'algoritmo \ref{alg:peerMethodsSequential} mostra le operazioni necessarie per trovare la soluzione numerica del problema descritto, basata sulla discretizzazione discussa precedentemente.
+
+\newpage
+
+%--------------------------------------------------------------
+%                   Algoritmo sequenziale
+%--------------------------------------------------------------
+\vspace{0.2cm}
+\begin{breakablealgorithm}
+    \caption{Algoritmo sequenziale peer methods}\label{alg:peerMethodsSequential}
+    \vspace{0.5cm}
+    \textbf{Input} $s,x_0,X,N, t_0, T,M, y_0, a,B_1,B_2,H, F, S, d, D, k, \Delta t$. \quad
+    \textbf{Output} $Y$
+    \vspace{0.2cm}
+    \begin{algorithmic}[1]
+        \Statex \textbf{// Initialization}
+        \State $t\_span = [t_0, T]$
+        \State time discretization $t_n(n = 0, \ldots, N)$
+        \State $N = (t\_span[2]-t\_span[1])/\Delta t$
+        \State $x\_span = [x_0, X]$
+        \State space discretization $x_m(m = 0, \ldots, M - 1)$
+        \State $\Delta x = (x\_span[2]-x\_span[1])/(M - 1)$
+        \Statex \textbf{// Spatial discretization}
+        \State defineLMatrix($L, \Delta x$)
+        \Statex \textbf{// Time discretization by peer methods}
+        \State $s = 2$ // set the number of stages
+        \Statex // Initialization with time step $n = 0$
+        \State \texttt{set} $t_{0,1} = t_0 + h \cdot c_1$
+        \State \texttt{set} $t_{0,2} = t_0 + h \cdot c_2$
+        \State \texttt{compute} $Y_{0,1}$ and $Y_{0,2}$ using Runge-Kutta 4th order method
+        \State \texttt{evaluate} $\mathcal{F}((Y_{0,1}))$ and $\mathcal{F}((Y_{0,2}))$ as in \eqref{eq:FYnm1-equation}
+        \Statex // Main loop: loop on time steps
+        \For {$n = 1, \ldots, N$} 
+        \State \texttt{set} $t_{n,1} = t_n + h \cdot c_1$
+        \State \texttt{set} $t_{n,2} = t_n + h \cdot c_2$
+        \State \texttt{compute} $Y_{n,1}$ and $Y_{n,2}$ as in \eqref{eq:extended-peer-methods}
+        \State \texttt{evaluate} $\mathcal{F}((Y_{n,1}))$ and $\mathcal{F}((Y_{n,2}))$ as in \eqref{eq:FYnm1-equation}
+        \EndFor
+    \end{algorithmic}
+\end{breakablealgorithm}
+\vspace{0.2cm}
+%--------------------------------------------------------------
+%                Spiegazione pseudocodice
+%--------------------------------------------------------------
+\begin{itemize}
+    \item \texttt{Righe 2-7}: l'algoritmo inizializza i parametri necessari per la discretizzazione del tempo e dello spazio. I parametri iniziali sono:
+    \begin{itemize}
+        \item $t_0$ tempo iniziale;
+        \item $T$ tempo finale;
+        \item $x_0$ spazio iniziale;
+        \item $X$ spazio finale;
+        \item $M$ dimensione della griglia spaziale;
+        \item $N$ dimensione della griglia temporale;
+        \item $k$ indice che rappresenta la $k$-esima diagonale, se posto a 0 rappresenta la diagonale principale;
+        \item $\Delta t$ distanza tra un valore e l'altro dell'intervallo temporale discretizzato;
+        \item $s$ numero di stage;
+        \item a, $B_1$, $B_2$, H, F, S parametri di $NL(y(t))$ dell'equazione (\ref{eq:ODE-system-disc});
+        \item d, D parametri di $L \cdot y(t)$ dell'equazione (\ref{eq:ODE-system-disc}).
+    \end{itemize}
+    \item \texttt{Riga 9}: \texttt{defineLMatrix} rappresenta il primo macro-modulo dell'algoritmo sequenziale. Per discretizzare rispetto alla coordinata spaziale, dobbiamo definire la matrice tridiagonale a blocchi $L$ \eqref{eq:matrix-L} come segue:
+    \begin{enumerate}
+        \item Definire la matrice identità \texttt{eye} di dimensione $M \times M$
+        \item Definire due matrici $M \times M$ con la $k + 1$ e $k - 1$ diagonale unitaria, dove $k = 0$ rappresenta la diagonale principale.
+        \item Sommare le tre matrici calcolate ai passi precedenti per ottenere la matrice $L_{Diff}$ \eqref{eq:matrix-Ldiff}
+        \item Impostare $L_{Diff} (M,1) = L_{Diff} (1,M) = 1$
+        \item Moltiplicare la matrice $L_{Diff}$ per $1 / \Delta x^2$
+        \item Moltiplicare $L_{Diff}$ rispettivamente per gli scalari $D$ e $d$ \eqref{eq:init-parameters} passati in input, ottenendo le matrici $DL_{Diff}$ e $dL_{Diff}$
+        \item Costruire la matrice tridiagonale a blocchi $L$ avente sulla diagonale principale le matrici $L_{Diff}$, $DL_{Diff}$ e $dL_{Diff}$
+    \end{enumerate}
+    \item \texttt{Righe 11-22}: dopo aver discretizzato rispetto la coordinata spaziale adesso non ci resta che discretizzare rispetto al tempo grazie all'utilizzo dei peer methods. Per prima cosa si calcola il valore di $Y$ quando $n = 0$ e per tutti gli stage $s$, ossia $Y_{0, i} \quad (i = 1 \ldots s)$, usando il metodo esplicito ad un passo di Runge-Kutta del quarto ordine, che garantisce che il peer methods mantenga lo stesso ordine di accuratezza quando calcola il successivo valore $Y_{n, i}$. Successivamente, per poter applicare l'equazione \eqref{eq:peer-methods-1} e quindi \eqref{eq:vector-representation-peer-methods}, bisogna definire la funzione $\mathcal{F}(Y^{[n]})$ come in \eqref{eq:FYnm1-equation}. Al passo $n + 1$, questa funzione diverrà $\mathcal{F}(Y^{[n - 1]})$ e potrà essere usata nella formula del peer methods. Infatti alle righe \texttt{18-22} si trova il loop principale del metodo, che altro non fa che eseguire le stesse operazioni eseguite alle righe \texttt{14-16}, stavolta per $n = 1 \ldots N$.
+\end{itemize}
+
+\noindent Si osserva che, una piccola dimensione del passo di discretizzazione comporta una maggiore dimensione delle griglie spazio-temporali discretizzate. Si avrà dunque un notevole aumento della complessità computazionale della procedura, che condurrà inevitabilmente a tempi di esecuzioni via via più grandi per quanto riguarda l'intero software. Nella sezione \ref{sec:sequential_test} verranno analizzati i tempi derivanti dall'esecuzione dell'software sequenziale  al variare di $N$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                   Test sequenziale
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Test sequenziale} \label{sec:sequential_test}
+
+\noindent Nella sezione \ref{sec:approccio-sequenziale} è stata analizzata l'idea dietro l'algoritmo sequenziale che successivamente è stato implementato in linguaggio C. I risultati dei test svolti verranno analizzati in questa sezione. 
+\vspace{0.2cm}
+
+\noindent Di seguito si riporta in una tabella i tempi per i due macro-moduli al variare di $N$ per quanto riguarda l'algoritmo sequenziale. I valori dati in input all'algoritmo sono:
+
+\begin{align}
+        t_0=0,\quad T = 50,\quad x_0 = -50,\quad X=50,\quad M = 64, \quad d = 500
+        \label{eq:init-parameters}
+\end{align}
+\begin{align*}
+        a = 1.5,\quad B_1 = 0.45,\quad B_2 = 0.3611,\quad F = H = D = 0.802,\quad S = 0.0002.
+\end{align*}
+
+%--------------------------------------------------------------
+%       Tabella tempi dei macro-moduli sequenziale
+%--------------------------------------------------------------
+
+% ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+%                       Old tables
+% ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+\begin{comment}
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.9\textwidth}
+            \begin{tabular}{ |c|c|c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{3}{|c|}{Execution times (s)} \\
+                \hline 
+                N & defineLMatrix module time & PeerMethods module time & Total time \\
+                \hline 
+                $1 \times 10^2$ & $1.1720 \times 10^{-3}$ & $1.4140$  & $1.4151$ \\ 
+                \hline 
+                $1 \times 10^3$ & $1.2060 \times 10^{-3}$ & $2.1346 \times 10^{1}$ & $2.1347 \times 10^{1}$ \\ 
+                \hline 
+                $1 \times 10^4$ & $1.0900 \times 10^{-3}$ & $1.7055 \times 10^{2}$ & $1.7056 \times 10^{2}$ \\ 
+                \hline 
+                $1 \times 10^5$ & $1.1750 \times 10^{-3}$ & $5.7870 \times 10^{1}$ & $5.7871 \times 10^{1}$ \\
+                \hline 
+                $1 \times 10^6$ & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi dell'algoritmo sequenziale dei vari macro-moduli e tempo totale di esecuzione per $M = 64$ e $N$ variabile} 
+    \label{tab:macro_module_time}
+\end{table}
+
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.6}
+        \begin{adjustbox}{width=1\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{4}{|c|}{Execution times (s)} \\
+                \hline 
+                N & RungeKutta4th sub-module time & Sherratt sub-module time & computeY sub-module time & PeerMethods module time \\
+                \hline 
+                $1 \times 10^2$ & $2.3065 \times 10^{-3}$ & $6.9000 \times 10^{-3}$ & $2.8554 \times 10^{-4}$ & $1.4140$ \\ 
+                \hline 
+                $1 \times 10^3$ & $3.1820 \times 10^{-3}$ & $6.5293 \times 10^{-3}$ & $2.6946 \times 10^{-4}$ & $2.1346 \times 10^{1}$ \\
+                \hline 
+                $1 \times 10^4$ & $2.9975 \times 10^{-3}$ & $6.5230 \times 10^{-3}$ & $2.6829 \times 10^{-4}$ & $1.7055 \times 10^{2}$ \\ 
+                \hline 
+                $1 \times 10^5$ & $2.8115 \times 10^{-3}$ & $2.7243 \times 10^{-4}$ & $1.2714 \times 10^{-5}$ & $5.7870 \times 10^{1}$ \\
+                \hline 
+                $1 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi dei sottomoduli del macro-modulo relativo al calcolo dei peer methods per $M = 64$ e $N$ variabile} 
+    \label{tab:sub_module_time}
+\end{table}
+\end{comment}
+
+
+
+
+
+
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.9\textwidth}
+            \begin{tabular}{ |c|c|c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{3}{|c|}{Execution times (s)} \\
+                \hline 
+                N & defineLMatrix module time & PeerMethods module time & Total time \\
+                \hline 
+                $1 \times 10^5$ & $1.1970 \times 10^{-3}$ & $5.7743 \times 10^{1}$  & $5.7744 \times 10^{1}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $1.1970 \times 10^{-3}$ & $1.1534 \times 10^{2}$ & $1.1535 \times 10^{2}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $1.1954 \times 10^{-3}$ & $2.3117 \times 10^{2}$ & $2.3118 \times 10^{2}$ \\ 
+                \hline 
+                $8 \times 10^5$ & $1.2000 \times 10^{-3}$ & $4.6446 \times 10^{2}$ & $4.6445 \times 10^{2}$ \\
+                \hline 
+                $1 \times 10^6$ & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi dell'algoritmo sequenziale dei vari macro-moduli e tempo totale di esecuzione per $M = 64$ e $N$ variabile} 
+    \label{tab:macro_module_time}
+\end{table}
+
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.6}
+        \begin{adjustbox}{width=1\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{4}{|c|}{Execution times (s)} \\
+                \hline 
+                N & RungeKutta4th sub-module time & Sherratt sub-module time & computeY sub-module time & PeerMethods module time \\
+                \hline 
+                $1 \times 10^5$ & $3.2775 \times 10^{-3}$ & $2.7116 \times 10^{-4}$ & $1.2223 \times 10^{-5}$ & $5.7744 \times 10^{1}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $3.0250 \times 10^{-3}$ & $2.7069 \times 10^{-4}$ & $1.2236 \times 10^{-5}$ & $1.1535 \times 10^{2}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $3.180 \times 10^{-3}$ & $2.7110 \times 10^{-4}$ & $1.2708 \times 10^{-5}$ & $2.3118 \times 10^{2}$ \\ 
+                \hline 
+                $8 \times 10^5$ & $2.8115 \times 10^{-3}$ & $2.7243 \times 10^{-4}$ & $1.2714 \times 10^{-5}$ & $4.6445 \times 10^{2}$ \\
+                \hline 
+                $1 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi dei sottomoduli del macro-modulo relativo al calcolo dei peer methods per $M = 64$ e $N$ variabile} 
+    \label{tab:sub_module_time}
+\end{table}
+
+\vspace{0.2cm}
+
+\noindent Come si può evincere dalla tabella, i tempi per quanto riguarda il primo macromodulo, che si occupa di definire la matrice $L$, hanno un andamento quasi costante. Questo è dovuto in primo luogo al fatto che le vere e proprie operazioni di calcolo sono poche e si tratta per lo più di operazioni di definizione e in secondo luogo al fatto che il primo macromodulo dipende solo da $M$ che è costante. Per quanto riguarda il secondo macromodulo, quello relativo all'applicazione del peer method, i tempi degradono all'aumentare di $N$ in quanto esso dipende fortemente da quest'ultimo valore. Si può concludere affermando che il macromodulo "più pesante" in termini computazionali è proprio il secondo.
+
+\noindent Poiché il secondo macromodulo è quello più pesante, ciò che è stato fatto è parallelizzarlo sfruttando il potere computazionale delle GPU e la programmazione parallela in ambiente CUDA, di modo da riucire a ridurre il tempo di esecuzione totale del software. Nel capitolo successivo verranno presentate le GPU e l'ambiente CUDA e nel capitolo \ref{cap:approccio-parallelo} verrà spiegato l'approccio usato per parallelizzare il secondo macromodulo.

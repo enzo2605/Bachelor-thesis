@@ -1,0 +1,961 @@
+\def\baselinestretch{1}
+\chapter{Test, risultati e conclusioni} \label{cap:test}
+\def\baselinestretch{1.66}
+
+%--------------------------------------------------------------
+%                   Test parallelo
+%--------------------------------------------------------------
+\section{Confronto tempi GPU vs CPU} \label{sec:parallel_test}
+\noindent In questa sezione andremo a confrontare i tempi dell'algoritmo sequenziale con quelli dell'algoritmo parallelo per ciascun macro modulo che è stato individuato nel problema (\ref{eq:main-equation}). Verrà mostrato quindi come l'accelerazione parallela dell'algoritmo \ref{alg:peerMethodsSequential} ha portato ad una notevole riduzione nei tempi di esecuzione sia dei vari macro moduli e sia del software nel suo complesso. Per il resto della sezione, consideriamo il problema (\ref{eq:main-equation}) con i seguenti parametri di input $A = 1.5$, $B_1 = 0.45$, $B_2 = 0.3611$, $F = 0.802$, $H = 0.802$, $S = 0.0002$, $d = 500$, $D = 0.802$, e gli intervalli di spazio e tempo pari rispettivamente a $\left[-50, 50\right]$ e $[0, 50]$. Inoltre, gli esperimenti sono stati eseguiti su un  computer con le seguenti specifiche tecniche:
+\begin{itemize}
+    \item 4 Intel(R) Core(TM) i7 860 CPU @2.80 GHz, 4 core, 8 thread per core, 8 GB di RAM
+    \item 1 GPU NVIDIA Quadro K5000, 1536 cuda core, 4 GB GDDR5, 173 GB/s di banda
+\end{itemize}
+
+\noindent Si noti che in ciascuna tabella, moltiplicando il numero di chiamate delle funzioni per il tempo medio si ottiene il tempo totale di esecuzione della specifica funzione.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       16x12
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Thread $\times$ block: 16 $\times$ 12}
+
+% ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+%                       Old tables
+% ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+\begin{comment}
+%--------------------------------------------------------------
+%                   Runge Kutta 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.51\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{RungeKutta4th GPU} & \multicolumn{1}{|c|}{RungeKutta4th CPU} \\
+                \hline
+                N & Tempo medio(s) & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^2$ & $4.2848 \times 10^{-5}$ & $2.3065 \times 10^{-3}$ \\
+                \hline 
+                $1 \times 10^3$ & $4.6192 \times 10^{-5}$ & $3.1820 \times 10^{-3}$ \\
+                \hline 
+                $1 \times 10^4$ & $4.6559 \times 10^{-5}$ & $2.9975 \times 10^{-3}$ \\
+                \hline 
+                $1 \times 10^5$ & $4.6160 \times 10^{-5}$ & $3.2775 \times 10^{-3}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $4.6336 \times 10^{-5}$ & - \\
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazione 16 thread e 12 blocchi}
+    \label{tab:rk4_kernel_table_16x12}
+\end{table}
+
+%--------------------------------------------------------------
+%                       Sherratt 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{Sherratt GPU} & \multicolumn{2}{|c|}{Sherratt CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^2$ & $2 \times 10^{2}$ & $6.4120 \times 10^{-6}$  & $2 \times 10^{2}$ & $6.9000 \times 10^{-3}$ \\
+                \hline 
+                $1 \times 10^3$ & $3 \times 10^{3}$ & $6.4160 \times 10^{-6}$  & $3 \times 10^{3}$ & $6.5293 \times 10^{-3}$ \\
+                \hline 
+                $1 \times 10^4$ & $2 \times 10^{4}$ & $6.4270 \times 10^{-6}$  & $2 \times 10^{4}$ & $6.5230 \times 10^{-3}$ \\
+                \hline 
+                $1 \times 10^5$ & $2 \times 10^{5}$ & $6.4280 \times 10^{-6}$  & $2 \times 10^{5}$ & $2.7116 \times 10^{-4}$ \\
+                \hline 
+                $1 \times 10^6$ & $3 \times 10^{6}$ & $6.4290 \times 10^{-6}$  & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo Sherratt su GPU vs CPU per la configurazione 16 thread e 12 blocchi}
+    \label{tab:sherratt_kernel_table_16x12}
+\end{table}
+
+%--------------------------------------------------------------
+%                   computeY 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{computeY GPU} & \multicolumn{2}{|c|}{computeY CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^2$ & $1 \times 10^{2}$ & $4.1140 \times 10^{-6}$ & $1 \times 10^{2}$ & $2.8554 \times 10^{-4}$ \\
+                \hline 
+                $1 \times 10^3$ & $1 \times 10^{3}$ & $4.1730 \times 10^{-6}$ & $1 \times 10^{3}$ & $2.6946 \times 10^{-4}$ \\
+                \hline 
+                $1 \times 10^4$ & $1 \times 10^{4}$ & $4.1150 \times 10^{-6}$ & $1 \times 10^{4}$ & $2.6829 \times 10^{-4}$ \\
+                \hline 
+                $1 \times 10^5$ & $1 \times 10^{5}$ & $4.0730 \times 10^{-6}$ & $1 \times 10^{5}$ & $1.2223 \times 10^{-5}$ \\
+                \hline 
+                $1 \times 10^6$ & $1 \times 10^{6}$ & $4.0800 \times 10^{-6}$ & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo computeY su GPU vs CPU per la configurazione 16 thread e 12 blocchi}
+    \label{tab:computeY_kernel_table_16x12}
+\end{table}
+
+\vspace{3cm}
+
+%--------------------------------------------------------------
+%                    Total time 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.45\textwidth}
+            \begin{tabular}{ |c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c|}{Tempo totale modulo (s)} \\
+                  \hline
+                  N & GPU & CPU \\
+                  \hline
+                  $1 \times 10^2$ & $1.333 \times 10^{-2}$ & $1.4151$ \\
+                  \hline 
+                  $1 \times 10^3$ & $1.4267 \times 10^{-1}$ & $2.1347 \times 10$ \\
+                  \hline 
+                  $1 \times 10^4$ & $9.79015 \times 10^{-1}$ & $1.7056 \times 10^{2}$ \\
+                  \hline 
+                  $1 \times 10^5$ & $8.0828$ & $5.7871 \times 10$ \\
+                  \hline 
+                  $1 \times 10^6$ & $1.2801 \times 10^{2}$ & - \\
+                  \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Tempo di esecuzione GPU vs CPU per 16 thread e 12 blocchi}
+    \label{tab:time_table_16x12}
+\end{table}
+\end{comment}
+
+
+%--------------------------------------------------------------
+%                   Runge Kutta 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.51\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{RungeKutta4th GPU} & \multicolumn{1}{|c|}{RungeKutta4th CPU} \\
+                \hline
+                N & Tempo medio(s) & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $4.6160 \times 10^{-5}$ & $3.2775 \times 10^{-3}$ \\
+                \hline 
+                $2 \times 10^5$ & $4.6208 \times 10^{-5}$ & $3.0250 \times 10^{-3}$ \\
+                \hline 
+                $4 \times 10^5$ & $4.6000 \times 10^{-5}$ & $3.1805 \times 10^{-3}$ \\
+                \hline 
+                $8 \times 10^5$ & $4.6400 \times 10^{-5}$ & $2.8115 \times 10^{-3}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $4.6336 \times 10^{-5}$ & - \\
+                \hline 
+                $3 \times 10^6$ & - & - \\
+                \hline
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazione 16 thread e 12 blocchi}
+    \label{tab:rk4_kernel_table_16x12}
+\end{table}
+
+%--------------------------------------------------------------
+%                       Sherratt 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{Sherratt GPU} & \multicolumn{2}{|c|}{Sherratt CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $2 \times 10^{5}$ & $6.4120 \times 10^{-6}$  & $2 \times 10^{5}$ & $2.7116 \times 10^{-4}$ \\
+                \hline 
+                $2 \times 10^5$ & $4 \times 10^{5}$ & $6.4160 \times 10^{-6}$  & $4 \times 10^{5}$ & $2.7050 \times 10^{-4}$ \\
+                \hline 
+                $4 \times 10^5$ & $8 \times 10^{5}$ & $6.4270 \times 10^{-6}$  & $28 \times 10^{5}$ & $2.7170 \times 10^{-4}$ \\
+                \hline 
+                $8 \times 10^5$ & $1 \times 10^{5}$ & $6.4280 \times 10^{-6}$  & $1 \times 10^{6}$ & $2.7243 \times 10^{-4}$ \\
+                \hline 
+                $1 \times 10^6$ & $3 \times 10^{6}$ & $6.4290 \times 10^{-6}$  & - & - \\ 
+                \hline
+                $3 \times 10^6$ & - & - & - & - \\
+                \hline
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo Sherratt su GPU vs CPU per la configurazione 16 thread e 12 blocchi}
+    \label{tab:sherratt_kernel_table_16x12}
+\end{table}
+
+%--------------------------------------------------------------
+%                   computeY 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{computeY GPU} & \multicolumn{2}{|c|}{computeY CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $1 \times 10^{5}$ & $4.1140 \times 10^{-6}$ & $1 \times 10^{5}$ & $1.2223 \times 10^{-5}$ \\
+                \hline 
+                $2 \times 10^5$ & $2 \times 10^{5}$ & $4.1730 \times 10^{-6}$ & $2 \times 10^{5}$ & $1.2236 \times 10^{-5}$ \\
+                \hline 
+                $4 \times 10^5$ & $4 \times 10^{5}$ & $4.1150 \times 10^{-6}$ & $4 \times 10^{5}$ & $1.2708 \times 10^{-5}$ \\
+                \hline 
+                $8 \times 10^5$ & $8 \times 10^{5}$ & $4.0730 \times 10^{-6}$ & $8 \times 10^{5}$ & $1.2714 \times 10^{-5}$ \\
+                \hline 
+                $1 \times 10^6$ & $1 \times 10^{6}$ & $4.0800 \times 10^{-6}$ & - & - \\ 
+                \hline
+                $3 \times 10^6$ & - & - & - & - \\
+                \hline
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo computeY su GPU vs CPU per la configurazione 16 thread e 12 blocchi}
+    \label{tab:computeY_kernel_table_16x12}
+\end{table}
+
+\vspace{3cm}
+
+%--------------------------------------------------------------
+%                    Total time 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.45\textwidth}
+            \begin{tabular}{ |c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c|}{Tempo totale modulo (s)} \\
+                  \hline
+                  N & GPU & CPU \\
+                  \hline
+                  $1 \times 10^5$ & $8.0828$ & $5.7394 \times 10$ \\
+                  \hline 
+                  $2 \times 10^5$ & $1.5699 \times 10$ & $1.1457 \times 10^{2}$ \\
+                  \hline 
+                  $4 \times 10^5$ & $3.1088 \times 10$ & $2.2945 \times 10^{2}$ \\
+                  \hline 
+                  $8 \times 10^5$ & $6.3654 \times 10$ & $4.6385 \times 10^{2}$ \\
+                  \hline 
+                  $1 \times 10^6$ & $1.2801 \times 10^{2}$ & - \\
+                  \hline
+                  $3 \times 10^6$ & - & - \\
+                  \hline
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Tempo di esecuzione GPU vs CPU per 16 thread e 12 blocchi}
+    \label{tab:time_table_16x12}
+\end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       20x10
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection{Thread $\times$ block: 20 $\times$ 10}
+
+%--------------------------------------------------------------
+%                   Runge Kutta 20x10
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.51\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{RungeKutta4th GPU} & \multicolumn{1}{|c|}{RungeKutta4th CPU} \\
+                \hline
+                 N & Tempo medio(s) & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $4.6192 \times 10^{-5}$ & $3.2775 \times 10^{-3}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4.6544 \times 10^{-5}$ & $3.0250 \times 10^{-3}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4.6224 \times 10^{-5}$ & $3.1805 \times 10^{-3}$ \\ 
+                \hline 
+                $8 \times 10^5$ & $4.6464 \times 10^{-5}$ & $2.8115 \times 10^{-3}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $4.6320 \times 10^{-5}$ & - \\ 
+                \hline 
+                 $3 \times 10^6$ & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazionee 20 thread e 10 blocchi}
+    \label{tab:rk4_kernel_table_20x10}
+\end{table}
+
+%--------------------------------------------------------------
+%                       Sherratt 20x10
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{Sherratt GPU} & \multicolumn{2}{|c|}{Sherratt CPU} \\
+                \hline
+                 N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $2 \times 10^{5}$ & $7.1000 \times 10^{-6}$  & $2 \times 10^{5}$ & $2.7116 \times 10^{-4}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4 \times 10^{5}$ & $7.0930 \times 10^{-6}$  & $4 \times 10^{5}$ & $2.7050 \times 10^{-4}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $8 \times 10^{5}$ & $7.1060 \times 10^{-6}$  & $8 \times 10^{5}$ & $2.7170 \times 10^{-4}$ \\ 
+                \hline 
+                $8 \times 10^5$ & $1 \times 10^{6}$ & $7.0930 \times 10^{-6}$  & $1 \times 10^{6}$ & $2.7243 \times 10^{-4}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $3 \times 10^{6}$ & $7.0930 \times 10^{-6}$  & - & - \\ 
+                \hline
+                 $3 \times 10^6$ & - & - & - & -\\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo Sherratt su GPU vs CPU per la configurazione 20 thread e 10 blocchi}
+    \label{tab:sherratt_kernel_table_20x10}
+\end{table}
+
+%--------------------------------------------------------------
+%                   computeY 20x10
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{computeY GPU} & \multicolumn{2}{|c|}{computeY CPU} \\
+                \hline
+                 N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $1 \times 10^{5}$ & $4.3480 \times 10^{-6}$ & $1 \times 10^{5}$ & $1.2223 \times 10^{-5}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $2 \times 10^{5}$ & $4.3930 \times 10^{-6}$ & $2 \times 10^{5}$ & $1.2236 \times 10^{-5}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4 \times 10^{5}$ & $4.3840 \times 10^{-6}$ & $4 \times 10^5$ & $1.2708 \times 10^{-5}$ \\ 
+                \hline 
+                $8 \times 10^5$ & $8 \times 10^{5}$ & $4.3700 \times 10^{-6}$ & $8 \times 10^5$ & $1.2714 \times 10^{-5}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $1 \times 10^{6}$ & $4.3950 \times 10^{-6}$ & - & - \\ 
+                \hline 
+                 $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo computeY su GPU vs CPU per la configurazione 20 thread e 10 blocchi}
+    \label{tab:computeY_kernel_table_20x10}
+\end{table}
+
+%--------------------------------------------------------------
+%                   Total time 20x10
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.45\textwidth}
+            \begin{tabular}{ |c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c|}{Tempo totale modulo (s)} \\
+                \hline
+                 N & GPU & CPU \\
+                 \hline 
+                 $1 \times 10^5$ & $8.2201$ & $5.7394 \times 10$ \\
+                 \hline 
+                 $2 \times 10^5$ & $1.6060 \times 10$ & $1.1457 \times 10^{2}$ \\
+                 \hline 
+                 $4 \times 10^5$ & $3.2633 \times 10$ & $2.2945 \times 10^{2}$ \\
+                 \hline 
+                 $8 \times 10^5$ & $6.4645 \times 10$ & $4.6385 \times 10^{2}$ \\
+                 \hline 
+                 $1 \times 10^6$ & $1.2850 \times 10^{2}$ & - \\
+                 \hline 
+                 $3 \times 10^6$ & - & - \\
+                 \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Tempo di esecuzione GPU vs CPU per 20 thread e 10 blocchi}
+    \label{tab:time_table_20x10}
+\end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       32x6
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection{Thread $\times$ block: 32 $\times$ 6}
+
+%--------------------------------------------------------------
+%                   Runge Kutta 32x6
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.51\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{RungeKutta4th GPU} & \multicolumn{1}{|c|}{RungeKutta4th CPU} \\
+                \hline
+                N & Tempo medio(s) & Tempo medio(s) \\
+                \hline 
+                 $1 \times 10^5$ & $4.6032 \times 10^{-5}$ & $3.2775 \times 10^{-3}$ \\ 
+                \hline 
+                 $2 \times 10^5$ & $4.6160 \times 10^{-5}$ & $3.0250 \times 10^{-3}$ \\ 
+                \hline
+                 $4 \times 10^5$ & $4.6319 \times 10^{-5}$ & $3.1805 \times 10^{-3}$ \\ 
+                \hline 
+                 $8 \times 10^5$ & $4.6208 \times 10^{-5}$ & $2.8115 \times 10^{-3}$ \\ 
+                \hline 
+                 $1 \times 10^6$ & $4.6143 \times 10^{-5}$ & - \\ 
+                \hline 
+                 $3 \times 10^6$ & - & -  \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazione 32 thread e 6 blocchi}
+    \label{tab:rk4_kernel_table_32x6}
+\end{table}
+
+%--------------------------------------------------------------
+%                       Sherratt 32x6
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{Sherratt GPU} & \multicolumn{2}{|c|}{Sherratt CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s)\\
+                \hline 
+                 $1 \times 10^5$ & $2 \times 10^{5}$ & $7.2060 \times 10^{-6}$  & $2 \times 10^{5}$ & $2.7116 \times 10^{-4}$ \\ 
+                \hline 
+                 $2 \times 10^5$ & $4 \times 10^{5}$ & $7.2100 \times 10^{-6}$  & $4 \times 10^{5}$ & $2.7050 \times 10^{-4}$ \\ 
+                \hline
+                 $4 \times 10^5$ & $8 \times 10^{5}$ & $7.2010 \times 10^{-6}$  & $8 \times 10^{5}$ & $2.7170 \times 10^{-4}$ \\ 
+                \hline 
+                 $8 \times 10^5$ & $1 \times 10^{6}$ & $7.2040 \times 10^{-6}$  & $1 \times 10^{6}$ & $2.7243 \times 10^{-4}$ \\ 
+                \hline 
+                 $1 \times 10^6$ & $3 \times 10^{6}$ & $7.2130 \times 10^{-6}$  & - & - \\ 
+                \hline 
+                 $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo Sherratt su GPU vs CPU per la configurazione 32 thread e 6 blocchi}
+    \label{tab:sherratt_kernel_table_32x6}
+\end{table}
+
+%--------------------------------------------------------------
+%                   computeY 16x12
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{computeY GPU} & \multicolumn{2}{|c|}{computeY CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                 $1 \times 10^5$ & $1 \times 10^{5}$ & $4.6070 \times 10^{-6}$ & $1 \times 10^5$ & $1.2223 \times 10^{-5}$ \\ 
+                \hline 
+                 $2 \times 10^5$ & $2 \times 10^{5}$ & $4.6810 \times 10^{-6}$ & $2 \times 10^5$ & $1.2236 \times 10^{-5}$ \\ 
+                \hline
+                 $4 \times 10^5$ & $4 \times 10^{5}$ & $4.7010 \times 10^{-6}$ & $4 \times 10^5$ & $1.2708 \times 10^{-5}$ \\ 
+                \hline 
+                 $8 \times 10^5$ & $8 \times 10^{5}$ & $4.7070 \times 10^{-6}$ & $8 \times 10^5$ & $1.2714 \times 10^{-5}$ \\ 
+                \hline 
+                 $1 \times 10^6$ & $1 \times 10^{6}$ & $4.6840 \times 10^{-6}$ & - & - \\ 
+                \hline 
+                 $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo computeY su GPU vs CPU per la configurazione 32 thread e 6 blocchi}
+    \label{tab:computeY_kernel_table_32x6}
+\end{table}
+
+%--------------------------------------------------------------
+%                  Total time 32x6
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.45\textwidth}
+            \begin{tabular}{ |c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c|}{Tempo totale modulo (s)} \\
+                \hline
+                 N & GPU & CPU \\
+                 \hline 
+                 $1 \times 10^5$ & $8.4711$ & $5.7394 \times 10$ \\
+                 \hline 
+                 $2 \times 10^5$ & $1.6104 \times 10$ & $1.1457 \times 10^{2}$ \\
+                 \hline 
+                 $4 \times 10^5$ & $3.3724 \times 10$ & $2.2945 \times 10^{2}$ \\
+                 \hline 
+                 $8 \times 10^5$ & $6.5092 \times 10$ & $4.6385 \times 10^{2}$ \\
+                 \hline 
+                 $1 \times 10^6$ & $1.3012 \times 10^{2}$ & - \\
+                 \hline 
+                 $3 \times 10^6$ & - & - \\
+                 \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Tempo di esecuzione GPU vs CPU per 32 thread e 6 blocchi}
+    \label{tab:time_table_32x6}
+\end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       40x5
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection{Thread $\times$ block: 40 $\times$ 5}
+
+%--------------------------------------------------------------
+%                   RungeKutta4th 40x5
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.51\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{RungeKutta4th GPU} & \multicolumn{1}{|c|}{RungeKutta4th CPU}\\
+                \hline
+                N & Tempo medio(s) & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $4.5888 \times 10^{-5}$ & $3.2775 \times 10^{-3}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4.6432 \times 10^{-5}$ & $3.0250 \times 10^{-3}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4.6496 \times 10^{-5}$ & $3.1805 \times 10^{-3}$ \\ 
+                \hline
+                $8 \times 10^5$ & $4.5839 \times 10^{-5}$ & $2.8115 \times 10^{-3}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $4.6496 \times 10^{-5}$ & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & -  \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazione 40 thread e 5 blocchi}
+    \label{tab:rk4_kernel_table_40x5}
+\end{table}
+
+%--------------------------------------------------------------
+%                   Sherratt 40x5
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{Sherratt GPU} & \multicolumn{2}{|c|}{Sherratt CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $2 \times 10^{5}$ & $7.6420 \times 10^{-6}$  & $2 \times 10^{5}$ & $2.7116 \times 10^{-4}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4 \times 10^{5}$ & $7.6610 \times 10^{-6}$  & $4 \times 10^{5}$ & $2.7050 \times 10^{-4}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $8 \times 10^{5}$ & $7.6380 \times 10^{-6}$  & $8 \times 10^{5}$ & $2.7170 \times 10^{-4}$ \\ 
+                \hline
+                $8 \times 10^5$ & $1 \times 10^{6}$ & $7.6400 \times 10^{-6}$  & $1 \times 10^{6}$ & $2.7243 \times 10^{-4}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $3 \times 10^{6}$ & $7.6370 \times 10^{-6}$  & - & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo Sherratt su GPU vs CPU per la configurazione 40 thread e 5 blocchi}
+    \label{tab:sherratt_kernel_table_40x5}
+\end{table}
+
+%--------------------------------------------------------------
+%                   computeY 40x5
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{computeY GPU} & \multicolumn{2}{|c|}{computeY CPU} \\
+                \hline
+                N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $1 \times 10^{5}$ & $4.6220 \times 10^{-6}$ & $1 \times 10^{5}$ & $1.2223 \times 10^{-5}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $2 \times 10^{5}$ & $4.6710 \times 10^{-6}$ & $2 \times 10^{5}$ & $1.2236 \times 10^{-5}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4 \times 10^{5}$ & $4.6710 \times 10^{-6}$ & $4 \times 10^{5}$ & $1.2708 \times 10^{-5}$ \\ 
+                \hline
+                $8 \times 10^5$ & $8 \times 10^{5}$ & $4.6220 \times 10^{-6}$ & $8 \times 10^{5}$ & $1.2714 \times 10^{-5}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $1 \times 10^{6}$ & $4.6720 \times 10^{-6}$ & - & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo computeY su GPU vs CPU per la configurazione 40 thread e 5 blocchi}
+    \label{tab:computeY_kernel_table_40x5}
+\end{table}
+
+%--------------------------------------------------------------
+%                   Total time 40x5
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.45\textwidth}
+            \begin{tabular}{ |c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c|}{Tempo totale modulo (s)} \\
+                \hline
+                 N & GPU & CPU \\
+                 \hline 
+                 $1 \times 10^5$ & $8.3965$ & $5.7394 \times 10$ \\
+                 \hline 
+                 $2 \times 10^5$ & $1.6198 \times 10$ & $1.1457 \times 10^{2}$\\
+                 \hline 
+                 $4 \times 10^5$ & $3.4005 \times 10$ & $2.2945 \times 10^{2}$ \\
+                 \hline 
+                 $8 \times 10^5$ & $6.8491 \times 10$ & $4.6385 \times 10^{2}$ \\
+                 \hline 
+                 $1 \times 10^6$ & $1.3661 \times 10^{2}$ & - \\
+                 \hline 
+                 $3 \times 10^6$ & - & - \\
+                 \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Tempo di esecuzione GPU vs CPU per 40 thread e 5 blocchi}
+    \label{tab:time_table_40x5}
+\end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       64x3
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection{Thread $\times$ block: 64 $\times$ 3}
+
+%--------------------------------------------------------------
+%                  RungeKutta4th 64x3
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.51\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{RungeKutta4th GPU} & \multicolumn{1}{|c|}{RungeKutta4th CPU} \\
+                \hline
+                 N & Tempo medio(s) & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $4.6320 \times 10^{-5}$ & $3.2775 \times 10^{-3}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4.6032 \times 10^{-5}$ & $3.0250 \times 10^{-3}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4.6512 \times 10^{-5}$ & $3.1805 \times 10^{-3}$ \\ 
+                \hline
+                $8 \times 10^5$ & $4.6143 \times 10^{-5}$ & $2.8115 \times 10^{-3}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $4.6479 \times 10^{-5}$ & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazione 64 thread e 3 blocchi}
+    \label{tab:rk4_kernel_table_64x3}
+\end{table}
+
+%--------------------------------------------------------------
+%                    Sherratt 64x3
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{Sherratt GPU} & \multicolumn{2}{|c|}{Sherratt CPU} \\
+                \hline
+                 N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $2 \times 10^{5}$ & $7.3010 \times 10^{-6}$  & $2 \times 10^{5}$ & $2.7116 \times 10^{-4}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4 \times 10^{5}$ & $7.3000 \times 10^{-6}$  & $4 \times 10^{5}$ & $2.7050 \times 10^{-4}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $8 \times 10^{5}$ & $7.2790 \times 10^{-6}$  & $8 \times 10^{5}$ & $2.7170 \times 10^{-4}$ \\ 
+                \hline
+                $8 \times 10^5$ & $1 \times 10^{6}$ & $7.2980 \times 10^{-6}$  & $1 \times 10^{6}$ & $2.7243 \times 10^{-4}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $3 \times 10^{6}$ & $7.2760 \times 10^{-6}$  & - & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo Sherratt su GPU vs CPU per la configurazione 64 thread e 3 blocchi}
+    \label{tab:sherratt_kernel_table_64x3}
+\end{table}
+
+%--------------------------------------------------------------
+%                   computeY 64x3
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{computeY GPU} & \multicolumn{2}{|c|}{computeY CPU} \\
+                \hline
+                 N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $1 \times 10^{5}$ & $4.7540 \times 10^{-6}$ & $1 \times 10^{5}$ & $1.2223 \times 10^{-5}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $2 \times 10^{5}$ & $4.7560 \times 10^{-6}$ & $2 \times 10^{5}$ & $1.2236 \times 10^{-5}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4 \times 10^{5}$ & $4.7680 \times 10^{-6}$ & $4 \times 10^{5}$ & $1.2708 \times 10^{-5}$ \\ 
+                \hline
+                $8 \times 10^5$ & $8 \times 10^{5}$ & $4.7910 \times 10^{-6}$ & $8 \times 10^{5}$ & $1.2714 \times 10^{-5}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $1 \times 10^{6}$ & $4.7440 \times 10^{-6}$ & - & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazione 64 thread e 3 blocchi}
+    \label{tab:computeY_kernel_table_64x3}
+\end{table}
+
+%--------------------------------------------------------------
+%                  Total time 64x3
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.45\textwidth}
+            \begin{tabular}{ |c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c|}{Tempo totale modulo (s)} \\
+                \hline
+                 N & GPU & CPU \\
+                 \hline 
+                 $1 \times 10^5$ & $8.2453$ & $5.7394 \times 10$ \\
+                 \hline 
+                 $2 \times 10^5$ & $1.6627 \times 10$ & $1.1457 \times 10^{2}$ \\
+                 \hline 
+                 $4 \times 10^5$ & $3.3992 \times 10$ & $2.2945 \times 10^{2}$ \\
+                 \hline 
+                 $8 \times 10^5$ & $6.8016 \times 10$ & $4.6385 \times 10^{2}$ \\
+                 \hline 
+                 $1 \times 10^6$ & $1.3274 \times 10^{2}$ & - \\
+                 \hline 
+                 $3 \times 10^6$ & - & - \\
+                 \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Tempo di esecuzione GPU vs CPU per 64 thread e 3 blocchi}
+    \label{tab:time_table_64x3}
+\end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       192x1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection{Thread $\times$ block: 192 $\times$ 1}
+
+%--------------------------------------------------------------
+%                  RungeKutta4th 192x1
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.51\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{1}{|c}{RungeKutta4th GPU} & \multicolumn{1}{|c|}{RungeKutta4th CPU} \\
+                \hline
+                 N & Tempo medio(s) & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $4.5999 \times 10^{-5}$ & $3.2775 \times 10^{-3}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4.5920 \times 10^{-5}$ & $3.0250 \times 10^{-3}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4.6144 \times 10^{-5}$ & $3.1805 \times 10^{-3}$ \\ 
+                \hline
+                $8 \times 10^5$ & $4.6624 \times 10^{-5}$ & $2.8115 \times 10^{-3}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $4.6255 \times 10^{-5}$ & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo RungeKutta4th su GPU vs CPU per la configurazione 192 thread e 1 blocchi}
+    \label{tab:rk4_kernel_table_192x1}
+\end{table}
+
+%--------------------------------------------------------------
+%                  Sherratt 192x1
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{Sherratt GPU} & \multicolumn{2}{|c|}{Sherratt CPU} \\
+                \hline
+                 N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $2 \times 10^{5}$ & $7.5640 \times 10^{-6}$  & $2 \times 10^{5}$ & $3.2120 \times 10^{-6}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $4 \times 10^{5}$ & $7.5470 \times 10^{-6}$  & $4 \times 10^{5}$ & $3.1960 \times 10^{-6}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $8 \times 10^{5}$ & $7.5670 \times 10^{-6}$  & $8 \times 10^{5}$ & $3.2170 \times 10^{-6}$ \\ 
+                \hline
+                $8 \times 10^5$ & $1 \times 10^{6}$ & $7.5410 \times 10^{-6}$  & $1 \times 10^{6}$ & $3.1900 \times 10^{-6}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $3 \times 10^{6}$ & $7.5450 \times 10^{-6}$  & - & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo Sherratt su GPU vs CPU per la configurazione 192 thread e 1 blocchi}
+    \label{tab:sherratt_kernel_table_192x1}
+\end{table}
+
+%--------------------------------------------------------------
+%                  computeY 192x1
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.65\textwidth}
+            \begin{tabular}{ |c|c|c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c}{computeY GPU} & \multicolumn{2}{|c|}{computeY CPU} \\
+                \hline
+                 N & Chiamate & Tempo medio(s) & Chiamate & Tempo medio(s) \\
+                \hline 
+                $1 \times 10^5$ & $1 \times 10^{5}$ & $2.9850 \times 10^{-6}$ & $1 \times 10^{5}$ & $1.2223 \times 10^{-5}$ \\ 
+                \hline 
+                $2 \times 10^5$ & $2 \times 10^{5}$ & $2.9650 \times 10^{-6}$ & $2 \times 10^{5}$ & $1.2236 \times 10^{-5}$ \\ 
+                \hline 
+                $4 \times 10^5$ & $4 \times 10^{5}$ & $2.9860 \times 10^{-6}$ & $4 \times 10^{5}$ & $1.2708 \times 10^{-5}$ \\ 
+                \hline
+                $8 \times 10^5$ & $8 \times 10^{5}$ & $2.9870 \times 10^{-6}$ & $8 \times 10^{5}$ & $1.2714 \times 10^{-5}$ \\ 
+                \hline 
+                $1 \times 10^6$ & $1 \times 10^{6}$ & $2.9850 \times 10^{-6}$ & - & - \\ 
+                \hline 
+                $3 \times 10^6$ & - & - & - & - \\ 
+                \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Confronto tempi di esecuzione modulo computeY su GPU vs CPU per la configurazione 192 thread e 1 blocchi}
+    \label{tab:computeY_kernel_table_192x1}
+\end{table}
+
+%--------------------------------------------------------------
+%                  Total time 192x1
+%--------------------------------------------------------------
+\begin{table}[ht!]
+    \begin{center}
+        \renewcommand{\arraystretch}{1.5}
+        \begin{adjustbox}{width=.45\textwidth}
+            \begin{tabular}{ |c|c|c| }
+                \hline
+                \multicolumn{1}{|c}{} & \multicolumn{2}{|c|}{Tempo totale modulo (s)} \\
+                \hline
+                 N & GPU & CPU \\
+                 \hline 
+                 $1 \times 10^5$ & $7.9331$ & $5.7394 \times 10$ \\
+                 \hline 
+                 $2 \times 10^5$ & $1.5908 \times 10$ & $1.1457 \times 10^{2}$ \\
+                 \hline 
+                 $4 \times 10^5$ & $3.1818 \times 10$ & $2.2945 \times 10^{2}$ \\
+                 \hline 
+                 $8 \times 10^5$ & $6.2973 \times 10$ & $4.6385 \times 10^{2}$ \\
+                 \hline 
+                 $1 \times 10^6$ & $1.2658 \times 10^{2}$ & - \\
+                 \hline 
+                 $3 \times 10^6$ & - & - \\
+                 \hline 
+            \end{tabular}
+        \end{adjustbox}
+    \end{center}
+    \caption{Tempo di esecuzione GPU vs CPU per 192 thread e 1 blocchi}
+    \label{tab:time_table_192x1}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                   Conclusioni
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusioni} \label{sec:conclusions}
+\noindent Nella tesi è stata presentata una strategia di parallelizzazione e una relativa implementazione in un ambiente GPU (Graphics Processing Units) per il calcolo della soluzione approssimata di un modello di vegetazione modellato da un sistema di PDE. La procedura numerica combina una discretizzazione spaziale mediante il metodo delle differenze finite centrali e l'uso di peer methods per la discretizzazione della variabile temporale. Sono stati forniti risultati numerici e test che mostrano il guadagno in termini di prestazioni dell'algoritmo proposto.
